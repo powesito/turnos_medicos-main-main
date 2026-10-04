@@ -180,7 +180,7 @@ Verás la plantilla personalizada con el mensaje "😕 No encontramos la página
 que buscas" en vez del error técnico de Django. No olvides volver a poner
 `DEBUG = True` para seguir desarrollando.
 
-## Próximos pasos sugeridos (no incluidos por simplicidad)
+## Próximos pasos sugeridos 
 
 - Autenticación de pacientes/médicos con login propio y permisos por rol.
 - Notificaciones por correo/SMS al confirmar o cancelar un turno.
