@@ -1,0 +1,85 @@
+{% extends 'citas/base.html' %}
+{% block title %}Turnos · Turnos Médicos{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="mb-0">Turnos</h1>
+    <a href="{% url 'citas:turno_create' %}" class="btn btn-primary">+ Agendar turno</a>
+</div>
+
+<form method="get" class="row g-2 mb-4">
+    <div class="col-auto">
+        <select name="estado" class="form-select">
+            <option value="">Todos los estados</option>
+            {% for valor, etiqueta in estados %}
+                <option value="{{ valor }}" {% if filtros.estado == valor %}selected{% endif %}>{{ etiqueta }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-auto">
+        <select name="medico" class="form-select">
+            <option value="">Todos los médicos</option>
+            {% for medico in medicos %}
+                <option value="{{ medico.pk }}" {% if filtros.medico == medico.pk|stringformat:"s" %}selected{% endif %}>{{ medico.nombre_completo }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-auto">
+        <input type="date" name="fecha" value="{{ filtros.fecha }}" class="form-control">
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-outline-secondary">Filtrar</button>
+        <a href="{% url 'citas:turno_list' %}" class="btn btn-link">Limpiar</a>
+    </div>
+</form>
+
+<div class="table-responsive">
+    <table class="table table-hover align-middle bg-white">
+        <thead class="table-light">
+            <tr><th>Fecha</th><th>Hora</th><th>Paciente</th><th>Médico</th><th>Especialidad</th><th>Estado</th><th></th></tr>
+        </thead>
+        <tbody>
+        {% for turno in turnos %}
+            <tr>
+                <td>{{ turno.fecha|date:"d/m/Y" }}</td>
+                <td>{{ turno.hora|time:"H:i" }}</td>
+                <td>{{ turno.paciente.nombre_completo }}</td>
+                <td>{{ turno.medico.nombre_completo }}</td>
+                <td>{{ turno.medico.especialidad }}</td>
+                <td>
+                    <span class="badge
+                        {% if turno.estado == 'CONFIRMADO' %}bg-success
+                        {% elif turno.estado == 'CANCELADO' %}bg-danger
+                        {% elif turno.estado == 'ATENDIDO' %}bg-primary
+                        {% elif turno.estado == 'NO_ASISTIO' %}bg-dark
+                        {% else %}bg-warning text-dark{% endif %}">
+                        {{ turno.get_estado_display }}
+                    </span>
+                </td>
+                <td class="text-nowrap">
+                    <a href="{% url 'citas:turno_detail' turno.pk %}" class="btn btn-sm btn-outline-primary">Ver</a>
+                    {% if turno.estado != 'CANCELADO' %}
+                    <a href="{% url 'citas:turno_cancelar' turno.pk %}" class="btn btn-sm btn-outline-danger">Cancelar</a>
+                    {% endif %}
+                </td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="7" class="text-center text-muted py-4">No se encontraron turnos.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if is_paginated %}
+<nav>
+    <ul class="pagination">
+        {% if page_obj.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a></li>
+        {% endif %}
+        <li class="page-item disabled"><span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span></li>
+        {% if page_obj.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente</a></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}

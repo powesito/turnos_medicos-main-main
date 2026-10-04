@@ -1,0 +1,59 @@
+{% extends 'citas/base.html' %}
+{% block title %}Inicio · Turnos Médicos{% endblock %}
+{% block content %}
+<h1 class="mb-4">Panel general</h1>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h6 class="text-muted">Médicos activos</h6>
+                <p class="display-6 mb-0">{{ total_medicos }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h6 class="text-muted">Pacientes registrados</h6>
+                <p class="display-6 mb-0">{{ total_pacientes }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h6 class="text-muted">Turnos de hoy</h6>
+                <p class="display-6 mb-0">{{ turnos_hoy }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">Próximos turnos</h4>
+    <a href="{% url 'citas:turno_create' %}" class="btn btn-primary btn-sm">+ Agendar turno</a>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-hover align-middle bg-white">
+        <thead class="table-light">
+            <tr><th>Fecha</th><th>Hora</th><th>Paciente</th><th>Médico</th><th>Estado</th><th></th></tr>
+        </thead>
+        <tbody>
+        {% for turno in proximos_turnos %}
+            <tr>
+                <td>{{ turno.fecha|date:"d/m/Y" }}</td>
+                <td>{{ turno.hora|time:"H:i" }}</td>
+                <td>{{ turno.paciente.nombre_completo }}</td>
+                <td>{{ turno.medico.nombre_completo }}</td>
+                <td><span class="badge bg-secondary">{{ turno.get_estado_display }}</span></td>
+                <td><a href="{% url 'citas:turno_detail' turno.pk %}" class="btn btn-sm btn-outline-primary">Ver</a></td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="6" class="text-center text-muted py-4">No hay turnos próximos.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

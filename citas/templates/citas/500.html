@@ -1,0 +1,10 @@
+{% extends 'citas/base.html' %}
+{% block title %}Error del servidor (500){% endblock %}
+{% block content %}
+<div class="text-center py-5">
+    <h1 class="display-1 fw-bold text-danger">500</h1>
+    <p class="fs-4">⚠️ Ocurrió un error interno en el servidor.</p>
+    <p class="text-muted mb-4">Ya fue registrado. Intenta nuevamente en unos minutos.</p>
+    <a href="{% url 'citas:home' %}" class="btn btn-primary">Volver al inicio</a>
+</div>
+{% endblock %}

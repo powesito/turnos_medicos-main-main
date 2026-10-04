@@ -1,0 +1,10 @@
+body {
+    background-color: #f5f7fa;
+}
+.card {
+    border: none;
+    border-radius: 0.75rem;
+}
+.navbar-brand {
+    letter-spacing: 0.02em;
+}

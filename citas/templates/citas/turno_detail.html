@@ -1,0 +1,26 @@
+{% extends 'citas/base.html' %}
+{% block title %}Turno #{{ turno.pk }}{% endblock %}
+{% block content %}
+<h1 class="mb-4">Turno #{{ turno.pk }}</h1>
+
+<div class="card shadow-sm" style="max-width: 640px;">
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-4">Paciente</dt><dd class="col-sm-8">{{ turno.paciente.nombre_completo }}</dd>
+            <dt class="col-sm-4">Médico</dt><dd class="col-sm-8">{{ turno.medico.nombre_completo }} ({{ turno.medico.especialidad }})</dd>
+            <dt class="col-sm-4">Fecha</dt><dd class="col-sm-8">{{ turno.fecha|date:"d/m/Y" }}</dd>
+            <dt class="col-sm-4">Hora</dt><dd class="col-sm-8">{{ turno.hora|time:"H:i" }}</dd>
+            <dt class="col-sm-4">Motivo</dt><dd class="col-sm-8">{{ turno.motivo|default:"—" }}</dd>
+            <dt class="col-sm-4">Estado</dt><dd class="col-sm-8">{{ turno.get_estado_display }}</dd>
+            <dt class="col-sm-4">Notas</dt><dd class="col-sm-8">{{ turno.notas|default:"—" }}</dd>
+        </dl>
+    </div>
+    <div class="card-footer d-flex gap-2">
+        <a href="{% url 'citas:turno_estado' turno.pk %}" class="btn btn-outline-primary btn-sm">Actualizar estado</a>
+        {% if turno.estado != 'CANCELADO' %}
+        <a href="{% url 'citas:turno_cancelar' turno.pk %}" class="btn btn-outline-danger btn-sm">Cancelar</a>
+        {% endif %}
+        <a href="{% url 'citas:turno_list' %}" class="btn btn-link btn-sm">Volver al listado</a>
+    </div>
+</div>
+{% endblock %}

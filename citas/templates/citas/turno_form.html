@@ -1,0 +1,253 @@
+{% extends 'citas/base.html' %}
+
+{% block title %}Agendar turno{% endblock %}
+
+{% block content %}
+
+<h1 class="mb-4">Agendar turno</h1>
+
+<div class="card shadow-sm" style="max-width: 640px;">
+    <div class="card-body">
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+
+            <!-- PACIENTE -->
+            <div class="mb-3">
+                <label for="id_paciente" class="form-label">
+                    Paciente
+                </label>
+
+                {{ form.paciente }}
+
+                {% for error in form.paciente.errors %}
+                    <div class="text-danger small">
+                        {{ error }}
+                    </div>
+                {% endfor %}
+
+                <div class="form-text">
+                    ¿No está en la lista?
+                    <a href="{% url 'citas:paciente_create' %}">
+                        Registrar nuevo paciente
+                    </a>.
+                </div>
+            </div>
+
+            <!-- MÉDICO -->
+            <div class="mb-3">
+                <label for="id_medico" class="form-label">
+                    Médico
+                </label>
+
+                {{ form.medico }}
+
+                {% for error in form.medico.errors %}
+                    <div class="text-danger small">
+                        {{ error }}
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- FECHA -->
+            <div class="mb-3">
+                <label for="id_fecha" class="form-label">
+                    Fecha
+                </label>
+
+                <input
+                    type="text"
+                    name="fecha"
+                    id="id_fecha"
+                    class="form-control"
+                    placeholder="DD/MM/AAAA"
+                    autocomplete="off"
+                    required
+                    value="{{ form.fecha.value|default:'' }}"
+                >
+
+                <div class="form-text">
+                    Ejemplo: 04/09/2026
+                </div>
+
+                {% for error in form.fecha.errors %}
+                    <div class="text-danger small">
+                        {{ error }}
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- HORA -->
+            <div class="mb-3">
+                <label for="id_hora" class="form-label">
+                    Hora
+                </label>
+
+                <input
+                    type="time"
+                    name="hora"
+                    id="id_hora"
+                    class="form-control"
+                    required
+                >
+
+                <div id="horarios-sugeridos" class="form-text"></div>
+
+                {% for error in form.hora.errors %}
+                    <div class="text-danger small">
+                        {{ error }}
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- MOTIVO -->
+            <div class="mb-3">
+                <label for="id_motivo" class="form-label">
+                    Motivo de consulta
+                </label>
+
+                {{ form.motivo }}
+
+                {% for error in form.motivo.errors %}
+                    <div class="text-danger small">
+                        {{ error }}
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- BOTONES -->
+            <button type="submit" class="btn btn-primary">
+                Confirmar turno
+            </button>
+
+            <a
+                href="{% url 'citas:turno_list' %}"
+                class="btn btn-link"
+            >
+                Cancelar
+            </a>
+
+        </form>
+
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+
+<script>
+
+const medicoSelect = document.getElementById('id_medico');
+const fechaInput = document.getElementById('id_fecha');
+const horaInput = document.getElementById('id_hora');
+const contenedor = document.getElementById('horarios-sugeridos');
+
+
+function convertirFechaAISO(fecha) {
+
+    const partes = fecha.split('/');
+
+    if (partes.length !== 3) {
+        return null;
+    }
+
+    const dia = partes[0].padStart(2, '0');
+    const mes = partes[1].padStart(2, '0');
+    const anio = partes[2];
+
+    if (anio.length !== 4) {
+        return null;
+    }
+
+    return `${anio}-${mes}-${dia}`;
+}
+
+
+async function actualizarHorarios() {
+
+    const medico = medicoSelect.value;
+    const fechaTexto = fechaInput.value.trim();
+
+    if (!medico || !fechaTexto) {
+        contenedor.innerHTML = '';
+        return;
+    }
+
+    const fecha = convertirFechaAISO(fechaTexto);
+
+    if (!fecha) {
+        contenedor.innerHTML =
+            '<span class="text-danger">' +
+            'Ingrese la fecha en formato DD/MM/AAAA.' +
+            '</span>';
+        return;
+    }
+
+    try {
+
+        const url =
+            `{% url 'citas:horarios_disponibles' %}` +
+            `?medico=${encodeURIComponent(medico)}` +
+            `&fecha=${encodeURIComponent(fecha)}`;
+
+        const respuesta = await fetch(url);
+
+        const data = await respuesta.json();
+
+        if (data.horarios) {
+
+            if (data.horarios.length > 0) {
+
+                contenedor.innerHTML =
+                    '<strong>Horarios libres:</strong> ' +
+                    data.horarios.join(', ');
+
+            } else {
+
+                contenedor.innerHTML =
+                    '<span class="text-danger">' +
+                    'No quedan horarios libres ese día.' +
+                    '</span>';
+
+            }
+
+        }
+
+    } catch (error) {
+
+        console.error(
+            'Error al consultar horarios:',
+            error
+        );
+
+        contenedor.innerHTML = '';
+
+    }
+
+}
+
+
+if (medicoSelect && fechaInput) {
+
+    medicoSelect.addEventListener(
+        'change',
+        actualizarHorarios
+    );
+
+    fechaInput.addEventListener(
+        'change',
+        actualizarHorarios
+    );
+
+}
+
+</script>
+
+{% endblock %}

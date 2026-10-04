@@ -1,0 +1,23 @@
+{% extends 'citas/base.html' %}
+{% block title %}Actualizar estado del turno{% endblock %}
+{% block content %}
+<h1 class="mb-4">Actualizar estado — Turno #{{ object.pk }}</h1>
+
+<div class="card shadow-sm" style="max-width: 560px;">
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label class="form-label">{{ form.estado.label }}</label>
+                {{ form.estado }}
+            </div>
+            <div class="mb-3">
+                <label class="form-label">{{ form.notas.label }}</label>
+                {{ form.notas }}
+            </div>
+            <button type="submit" class="btn btn-primary">Guardar</button>
+            <a href="{% url 'citas:turno_detail' object.pk %}" class="btn btn-link">Volver</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

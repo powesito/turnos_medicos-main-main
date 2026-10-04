@@ -1,0 +1,34 @@
+{% extends 'citas/base.html' %}
+{% block title %}Médicos · Turnos Médicos{% endblock %}
+{% block content %}
+<h1 class="mb-4">Médicos</h1>
+
+<form method="get" class="row g-2 mb-4">
+    <div class="col-auto">
+        <select name="especialidad" class="form-select" onchange="this.form.submit()">
+            <option value="">Todas las especialidades</option>
+            {% for esp in especialidades %}
+                <option value="{{ esp.pk }}" {% if especialidad_seleccionada == esp.pk|stringformat:"s" %}selected{% endif %}>{{ esp.nombre }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</form>
+
+<div class="row g-3">
+    {% for medico in medicos %}
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h5 class="card-title">{{ medico.nombre_completo }}</h5>
+                <p class="card-subtitle text-muted mb-2">{{ medico.especialidad }}</p>
+                <p class="small mb-1">🕐 {{ medico.hora_inicio_jornada|time:"H:i" }} — {{ medico.hora_fin_jornada|time:"H:i" }}</p>
+                <p class="small mb-3">⏱️ Turnos de {{ medico.duracion_turno_min }} min</p>
+                <a href="{% url 'citas:turno_create' %}?medico={{ medico.pk }}" class="btn btn-primary btn-sm">Agendar turno</a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <p class="text-muted">No hay médicos registrados con ese filtro.</p>
+    {% endfor %}
+</div>
+{% endblock %}
