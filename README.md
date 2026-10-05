@@ -32,7 +32,6 @@ turnos_medicos/
 ├── manage.py
 ├── requirements.txt
 ├── .env                       # Variables de entorno (SECRET_KEY, DB_*)
-├── .env.example               # Plantilla de variables de entorno
 ├── docs/crear_base_datos.sql  # Script SQL: base de datos, usuario y permisos
 ├── config/                    # Configuración del proyecto (settings, urls)
 └── citas/                     # App principal
@@ -82,8 +81,8 @@ turnos_medicos/
    mysql -u root -p < docs/crear_base_datos.sql
    ```
 
-4. Revisa el archivo `.env` (si no existe, cópialo desde `.env.example`). `SECRET_KEY` y las
-   credenciales `DB_*` deben coincidir con las del paso 3.
+4. El archivo `.env` ya viene incluido en el repositorio. Revisa que `SECRET_KEY` y las
+   credenciales `DB_*` coincidan con las del paso 3.
 
 5. Aplica las migraciones (ya vienen incluidas en el repositorio):
    ```
@@ -138,7 +137,7 @@ con `python-decouple`.
 
 El archivo `.env` se incluye en el repositorio por requerimiento de la evaluación
 (para que el proyecto pueda ejecutarse y revisarse). **En un proyecto real el `.env` debe
-ir en `.gitignore`** y solo se versionaría `.env.example`.
+ir en `.gitignore`** y solo se versionaría una plantilla sin credenciales.
 
 ## API REST
 
@@ -216,7 +215,7 @@ También puedes probar todo desde el navegador (Browsable API de DRF) o con Post
 - **Modelo de datos:** `citas/models.py`
 - **Migraciones:** `citas/migrations/`
 - **Scripts SQL:** `docs/crear_base_datos.sql`
-- **Variables de entorno:** `.env` y `.env.example`
+- **Variables de entorno:** `.env`
 - **Repositorio GitHub:** con historial de commits (URL entregada en la plataforma)
 
 ## Flujo URL → vista → plantilla (Evaluación 1)
