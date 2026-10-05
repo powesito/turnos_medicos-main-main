@@ -1,7 +1,8 @@
 # Sistema de Turnos Médicos (Django + Django REST Framework)
 
-Aplicación web y **API REST** para gestionar especialidades, médicos, pacientes y turnos (citas) médicas.
-Evaluación N.° 2 – Programación Backend.
+API REST y aplicación web para gestionar especialidades, médicos, pacientes y turnos (citas) médicas.
+
+**Asignatura:** Programación Backend · **Evaluación N.° 2** – Desarrollo de API REST con Django REST Framework
 
 ## Funcionalidades
 
@@ -11,13 +12,18 @@ Evaluación N.° 2 – Programación Backend.
 - **Turnos**:
   - Agendar, ver detalle, cambiar estado (Pendiente, Confirmado, Cancelado, Atendido, No asistió) y cancelar.
   - Validaciones automáticas: no se permite agendar en el pasado, fuera del horario
-    del médico, ni dos turnos en el mismo horario con el mismo médico (a nivel de
-    base de datos con `UniqueConstraint` + validación en `clean()`).
-  - Endpoint JSON (`/api/horarios-disponibles/`) que calcula los horarios libres
-    de un médico en una fecha, usado por el formulario de agendamiento.
-- **Panel de administración** de Django ya configurado (`/admin/`) para gestión
-  interna rápida.
-- Interfaz con Bootstrap 5, en español.
+    del médico, ni dos turnos activos en el mismo horario con el mismo médico
+    (validación en `Turno.clean()`, reutilizada por el serializer de la API).
+  - Historial de cambios de estado (`HistorialTurno`) registrado automáticamente desde la API.
+- **API REST completa** (CRUD) para los 5 modelos, con Django REST Framework.
+- **Panel de administración** de Django configurado (`/admin/`).
+- Interfaz web con Bootstrap 5, en español (Evaluación N.° 1).
+
+## Tecnologías
+
+- Python 3 · Django 6.1 · Django REST Framework 3.18
+- MySQL (con `mysqlclient`)
+- `python-decouple` para variables de entorno
 
 ## Estructura del proyecto
 
@@ -25,22 +31,34 @@ Evaluación N.° 2 – Programación Backend.
 turnos_medicos/
 ├── manage.py
 ├── requirements.txt
-├── .env.example         # Plantilla de variables de entorno
+├── .env                       # Variables de entorno (SECRET_KEY, DB_*)
+├── .env.example               # Plantilla de variables de entorno
 ├── docs/crear_base_datos.sql  # Script SQL: base de datos, usuario y permisos
-├── config/              # Configuración del proyecto (settings, urls)
-└── citas/                # App principal
-    ├── models.py         # Especialidad, Medico, Paciente, Turno, HistorialTurno
+├── config/                    # Configuración del proyecto (settings, urls)
+└── citas/                     # App principal
+    ├── models.py              # Especialidad, Medico, Paciente, Turno, HistorialTurno
+    ├── migrations/            # 0001_initial, 0002, 0003_historialturno
     ├── admin.py
-    ├── serializers.py    # ModelSerializer de cada modelo (API REST)
-    ├── api_views.py      # ModelViewSet de cada modelo (API REST)
-    ├── api_urls.py       # DefaultRouter con los endpoints (API REST)
+    ├── serializers.py         # ModelSerializer de cada modelo (API REST)
+    ├── api_views.py           # ModelViewSet de cada modelo (API REST)
+    ├── api_urls.py            # DefaultRouter con los endpoints (API REST)
     ├── forms.py
-    ├── views.py          # Vistas con plantillas HTML (Evaluación 1)
+    ├── views.py               # Vistas con plantillas HTML (Evaluación 1)
     ├── urls.py
     ├── templates/citas/
     ├── static/citas/
     └── management/commands/cargar_datos_demo.py
 ```
+
+## Modelo de datos
+
+| Modelo | Campos principales | Relaciones |
+|---|---|---|
+| `Especialidad` | nombre (único), descripcion | 1 especialidad → N médicos |
+| `Medico` | nombre_completo, email, telefono, duracion_turno_min, hora_inicio_jornada, hora_fin_jornada, activo | FK a `Especialidad` (PROTECT); OneToOne opcional a `User` |
+| `Paciente` | nombre_completo, rut_o_documento (único), email, telefono, fecha_nacimiento | OneToOne opcional a `User` |
+| `Turno` | fecha, hora, motivo, estado, notas, creado_en, actualizado_en | FK a `Paciente` y a `Medico` (CASCADE) |
+| `HistorialTurno` | estado_anterior, estado_nuevo, descripcion, creado_en | FK a `Turno` (CASCADE); FK opcional a `User` |
 
 ## Instalación
 
@@ -50,6 +68,7 @@ turnos_medicos/
    .\.venv\Scripts\Activate
    python -m pip install --upgrade pip
    ```
+   En Linux/macOS: `source .venv/bin/activate`.
    Si Windows bloquea el script: `Set-ExecutionPolicy Bypass -Scope CurrentUser`.
 
 2. Instala las librerías:
@@ -57,13 +76,16 @@ turnos_medicos/
    pip install -r requirements.txt
    ```
 
-3. Crea la base de datos y el usuario en MySQL ejecutando `docs/crear_base_datos.sql`
-   como administrador (`mysql -u root -p`).
+3. Crea la base de datos, el usuario y sus permisos en MySQL ejecutando `docs/crear_base_datos.sql`
+   como administrador:
+   ```
+   mysql -u root -p < docs/crear_base_datos.sql
+   ```
 
-4. Crea el archivo `.env` copiando `.env.example` y revisa los valores: `SECRET_KEY` y las credenciales
-   `DB_*` deben coincidir con las del paso 3. El `.env` no se sube al repositorio.
+4. Revisa el archivo `.env` (si no existe, cópialo desde `.env.example`). `SECRET_KEY` y las
+   credenciales `DB_*` deben coincidir con las del paso 3.
 
-5. Crea las tablas (las migraciones ya vienen incluidas):
+5. Aplica las migraciones (ya vienen incluidas en el repositorio):
    ```
    python manage.py migrate
    ```
@@ -74,14 +96,49 @@ turnos_medicos/
    python manage.py cargar_datos_demo
    ```
 
-7. Inicia el servidor (con `DEBUG=False` agrega `--insecure` para que cargue el CSS):
+7. Inicia el servidor:
    ```
    python manage.py runserver
    ```
-   App: http://127.0.0.1:8000/ · Admin: http://127.0.0.1:8000/admin/ · API: http://127.0.0.1:8000/api/
+   - Aplicación: http://127.0.0.1:8000/
+   - Admin: http://127.0.0.1:8000/admin/
+   - API: http://127.0.0.1:8000/api/
 
-Cada vez que cambies los modelos: `makemigrations` y `migrate`.
+   > Si `DEBUG=False`, agrega `--insecure` (`python manage.py runserver --insecure`)
+   > para que se carguen los estilos CSS del admin y de la Browsable API.
+
+Cada vez que cambies los modelos: `python manage.py makemigrations` y `python manage.py migrate`.
 Cada vez que agregues una librería: `pip freeze > requirements.txt`.
+
+## Configuración de base de datos (scripts SQL)
+
+El script `docs/crear_base_datos.sql` realiza:
+
+- **Crear la base de datos** `turnos_medicos` (utf8mb4).
+- **Crear el usuario** `turnos_user` con contraseña.
+- **Asignar permisos**: `GRANT ALL PRIVILEGES` solo sobre `turnos_medicos.*`.
+- `FLUSH PRIVILEGES` para aplicar los cambios.
+
+## Variables de entorno
+
+Las credenciales **no están escritas en `settings.py`**: se leen desde el archivo `.env`
+con `python-decouple`.
+
+| Variable | Descripción |
+|---|---|
+| `SECRET_KEY` | Clave secreta de Django |
+| `DEBUG` | Modo depuración (`True` en desarrollo) |
+| `ALLOWED_HOSTS` | Hosts permitidos, separados por coma |
+| `DB_ENGINE` | Motor de base de datos (`django.db.backends.mysql`) |
+| `DB_NAME` | Nombre de la base de datos |
+| `DB_USER` | Usuario de la aplicación |
+| `DB_PASSWORD` | Contraseña del usuario |
+| `DB_HOST` | Host de la base de datos |
+| `DB_PORT` | Puerto (3306) |
+
+El archivo `.env` se incluye en el repositorio por requerimiento de la evaluación
+(para que el proyecto pueda ejecutarse y revisarse). **En un proyecto real el `.env` debe
+ir en `.gitignore`** y solo se versionaría `.env.example`.
 
 ## API REST
 
@@ -96,7 +153,7 @@ registrados con `DefaultRouter` en `citas/api_urls.py` e incluidos en `config/ur
 | Turnos | `/api/turnos/` | `/api/turnos/{id}/` |
 | Historial de turnos | `/api/historial/` | `/api/historial/{id}/` |
 
-Operaciones CRUD por recurso:
+Operaciones CRUD disponibles en cada recurso:
 
 | Método | URL | Acción |
 |---|---|---|
@@ -107,88 +164,84 @@ Operaciones CRUD por recurso:
 | PATCH | `/api/<recurso>/{id}/` | Modificar parcialmente |
 | DELETE | `/api/<recurso>/{id}/` | Eliminar |
 
-Reglas de negocio en `/api/turnos/`: no se permiten fechas pasadas, horas fuera de la jornada del
-médico ni dos turnos del mismo médico a la misma fecha y hora (el serializer reutiliza `Turno.clean()`).
-Cada creación o cambio de estado queda registrado en el historial.
+### Reglas de negocio en `/api/turnos/`
 
-Ejemplo (crear un turno):
+- No se permiten fechas pasadas.
+- No se permiten horas fuera de la jornada del médico.
+- No se permiten dos turnos activos del mismo médico a la misma fecha y hora.
+- Cada creación o cambio de estado queda registrado en `HistorialTurno`.
+
+(El serializer reutiliza `Turno.clean()`, y `TurnoViewSet` sobrescribe `perform_create` y
+`perform_update` para generar el historial.)
+
+### Ejemplos
+
+Crear un turno:
 
 ```
 POST /api/turnos/
+Content-Type: application/json
+
 {"paciente": 1, "medico": 1, "fecha": "2026-10-20", "hora": "10:00:00", "motivo": "Control"}
 ```
 
-Puedes probar todo desde el navegador (Browsable API de DRF), Postman o `curl`.
+Modificar solo el estado:
 
-## Variables de entorno
+```
+PATCH /api/turnos/1/
+Content-Type: application/json
 
-Las credenciales no están en `settings.py`; se leen del archivo `.env` con `python-decouple`
-(`SECRET_KEY`, `DEBUG`, `ALLOWED_HOSTS`, `DB_ENGINE`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`).
-El `.env` está en `.gitignore`; el repositorio incluye `.env.example` como plantilla.
-
-## Flujo de uso típico
-
-1. Entra a `/admin/` y crea (o usa el comando `cargar_datos_demo`) especialidades y médicos.
-2. Registra un paciente desde "Nuevo paciente" en el menú.
-3. Ve a "Agendar turno", elige paciente, médico, fecha y hora (el sistema te
-   muestra los horarios libres del médico ese día).
-4. Desde "Turnos" puedes filtrar por estado, médico o fecha, ver el detalle,
-   cambiar su estado clínico o cancelarlo.
-
-## Flujo URL → vista → plantilla
-
-Django resuelve cada petición en tres pasos, y este proyecto los usa así:
-
-1. **`config/urls.py`** (raíz del proyecto) incluye las rutas de la app con
-   `include('citas.urls')`, y define `handler404` / `handler500` para los
-   errores.
-2. **`citas/urls.py`** mapea cada ruta a una vista concreta, por ejemplo
-   `path('', views.HomeView.as_view(), name='home')` es la página de bienvenida.
-3. La **vista** (en `citas/views.py`) procesa la lógica (consultas al ORM,
-   validaciones, formularios) y llama a `render()` con una **plantilla** de
-   `citas/templates/citas/`, que hereda de `base.html`.
-
-### Página de bienvenida
-
-La ruta raíz (`/`) apunta a `HomeView`, que muestra un resumen (médicos
-activos, pacientes registrados, turnos de hoy) en vez de la página de
-bienvenida por defecto de Django — confirma que la app está correctamente
-conectada al proyecto.
-
-### Página 404 personalizada
-
-- `config/urls.py` define `handler404 = 'citas.views.error_404_view'`.
-- `citas/views.py` → `error_404_view()` renderiza `citas/templates/citas/404.html`
-  (hereda el diseño del sitio) devolviendo explícitamente `status=404`.
-- También se agregó `handler500` con `citas/templates/citas/500.html` como
-  buena práctica adicional.
-
-**Cómo probarla:** Django solo usa `handler404`/`handler500` cuando
-`DEBUG = False` (con `DEBUG = True` siempre verás la página de depuración de
-Django con el traceback). Para probarla localmente:
-
-```bash
-# En config/settings.py, cambia temporalmente:
-DEBUG = False
-
-# Luego levanta el servidor y visita una URL que no existe, por ejemplo:
-python manage.py runserver
-# http://127.0.0.1:8000/esta-ruta-no-existe/
+{"estado": "CONFIRMADO"}
 ```
 
-Verás la plantilla personalizada con el mensaje "😕 No encontramos la página
-que buscas" en vez del error técnico de Django. No olvides volver a poner
-`DEBUG = True` para seguir desarrollando.
+Eliminar:
 
-## Próximos pasos sugeridos 
+```
+DELETE /api/turnos/1/
+```
 
-- Autenticación de pacientes/médicos con login propio y permisos por rol.
+Con `curl`:
+
+```
+curl http://127.0.0.1:8000/api/medicos/
+curl -X POST http://127.0.0.1:8000/api/especialidades/ \
+     -H "Content-Type: application/json" \
+     -d '{"nombre": "Neurología", "descripcion": "Sistema nervioso"}'
+```
+
+También puedes probar todo desde el navegador (Browsable API de DRF) o con Postman.
+
+## Evidencias de la evaluación
+
+- **Modelo de datos:** `citas/models.py`
+- **Migraciones:** `citas/migrations/`
+- **Scripts SQL:** `docs/crear_base_datos.sql`
+- **Variables de entorno:** `.env` y `.env.example`
+- **Repositorio GitHub:** con historial de commits (URL entregada en la plataforma)
+
+## Flujo URL → vista → plantilla (Evaluación 1)
+
+1. **`config/urls.py`** incluye las rutas de la API (`api/`) y de la app web con `include(...)`,
+   y define `handler404` / `handler500`.
+2. **`citas/urls.py`** mapea cada ruta de la interfaz web a una vista;
+   **`citas/api_urls.py`** registra los ViewSets de la API en el router.
+3. Las vistas web (`citas/views.py`) procesan la lógica y renderizan plantillas de
+   `citas/templates/citas/`, que heredan de `base.html`.
+
+### Páginas de error personalizadas
+
+`handler404` y `handler500` renderizan `citas/templates/citas/404.html` y `500.html`.
+Django solo los usa cuando `DEBUG=False`. Para probarlo, pon `DEBUG=False` en el `.env`,
+levanta el servidor con `runserver --insecure` y visita una URL inexistente.
+
+## Próximos pasos sugeridos
+
+- Autenticación en la API (token/JWT) y permisos por rol.
 - Notificaciones por correo/SMS al confirmar o cancelar un turno.
 - Recordatorios automáticos (Celery + cron).
-- Autenticación en la API (token/JWT) y permisos por rol.
 
 ## Notas técnicas
 
-- Base de datos: MySQL (configurada por variables de entorno `DB_*`). Para pruebas rápidas puedes usar
+- Base de datos: MySQL (configurada por variables `DB_*`). Para pruebas rápidas se puede usar
   SQLite con `DB_ENGINE=django.db.backends.sqlite3` y `DB_NAME=db.sqlite3` en el `.env`.
 - Antes de desplegar en producción: `SECRET_KEY` nueva, `DEBUG=False` y `ALLOWED_HOSTS` correcto.
