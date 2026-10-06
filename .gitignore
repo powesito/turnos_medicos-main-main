@@ -1,7 +1,4 @@
-# Sé que no es una buena práctica subir todos los datos sensibles al repositorio, como el 
-#archivo .env, la base de datos o la SECRET_KEY. En este caso lo hice únicamente con fines
-# de evaluación, porque no sabía si debía enviar el proyecto completo o excluir archivos como el .env y el .gitignore.
-#.env
+.env
 .venv/
 venv/
 __pycache__/
